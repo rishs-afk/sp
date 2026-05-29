@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shim Palladan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #dcdbd5;
+    --text-dark: #2a2825;
+    --text-mid: #4a4845;
+    --text-light: #7a7875;
+    --grain-opacity: 0.48;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    cursor: none;
+  }
+
+  /* ── Hexagonal background pattern ── */
+  #hex-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Grain overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: multiply;
+    animation: grain-shift 0.15s steps(1) infinite;
+  }
+
+  @keyframes grain-shift {
+    0%  { background-position: 0 0; }
+    10% { background-position: -5% -10%; }
+    20% { background-position: -15% 5%; }
+    30% { background-position: 7% -25%; }
+    40% { background-position: -5% 25%; }
+    50% { background-position: -15% 10%; }
+    60% { background-position: 15% 0%; }
+    70% { background-position: 0% 15%; }
+    80% { background-position: 3% 35%; }
+    90% { background-position: -10% 10%; }
+    100%{ background-position: 0 0; }
+  }
+
+  /* ── Custom cursor ── */
+  #cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--text-dark);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(42,40,37,0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: width 0.35s ease, height 0.35s ease;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 36px;
+    opacity: 0;
+    animation: fade-up-plain 0.8s ease 3.2s forwards;
+  }
+
+  .nav-logo {
+    position: absolute;
+    left: 36px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dark);
+  }
+
+  .logo-mark {
+    width: 28px; height: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+  }
+  .logo-mark span { background: var(--text-dark); display: block; }
+  .logo-mark span:nth-child(2) { opacity: 0.4; }
+  .logo-mark span:nth-child(3) { opacity: 0.4; }
+
+  .nav-center {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid rgba(42,40,37,0.25);
+    border-radius: 999px;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .nav-indicator {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    height: calc(100% - 16px);
+    width: 0;
+    border-radius: 999px;
+    background: #2a2825;
+    box-shadow: none;
+    transform: translateX(8px);
+    transition: transform 680ms cubic-bezier(0.22, 1.55, 0.34, 1),
+                width 680ms cubic-bezier(0.22, 1.55, 0.34, 1);
+    z-index: 0;
+  }
+
+  .nav-center button {
+    position: relative;
+    z-index: 1;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    padding: 11px 26px;
+    border-radius: 999px;
+    cursor: none;
+    transition: transform 220ms cubic-bezier(0.22,1.45,0.36,1),
+                color 220ms ease;
+  }
+  .nav-center button:hover {
+    transform: translateY(-1px);
+  }
+  .nav-center button.active {
+    color: #ffffff;
+  }
+
+  .nav-right {
+    position: absolute;
+    right: 36px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-dark);
+  }
+
+  /* ── Canvas for radiating lines ── */
+  #line-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── Portrait ── */
+  #portrait-wrap {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: clamp(380px, 47vw, 760px);
+    height: 100vh;
+    z-index: 3;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  #portrait {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    filter: blur(6px) grayscale(18%);
+    opacity: 0;
+    animation: portrait-in 1.2s cubic-bezier(0.16,1,0.3,1) 0.9s forwards;
+    transition: filter 0.7s cubic-bezier(0.16,1,0.3,1),
+                opacity 0.7s cubic-bezier(0.16,1,0.3,1);
+    will-change: filter;
+    mix-blend-mode: multiply;
+  }
+
+  /* gradient fade at bottom */
+  #portrait-fade {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55%;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(220,219,213,0.55) 40%,
+      rgba(220,219,213,0.88) 70%,
+      var(--bg) 100%
+    );
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* name sits above fade */
+  #portrait-name {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(920px, 90vw);
+    z-index: 3;
+    text-align: center;
+    pointer-events: none;
+    white-space: nowrap;
+    opacity: 1;
+  }
+
+  .pname-first {
+    display: block;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 6vw, 96px);
+    letter-spacing: 0.06em;
+    color: var(--text-dark);
+    line-height: 1;
+    opacity: 0;
+    animation: fade-up-plain 1s cubic-bezier(0.16,1,0.3,1) 0.1s forwards;
+  }
+
+  .pname-last {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(18px, 2.2vw, 36px);
+    letter-spacing: 0.28em;
+    color: var(--text-mid);
+    line-height: 1;
+    margin-top: -0.18em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fade-up-plain 1s cubic-bezier(0.16,1,0.3,1) 0.35s forwards;
+  }
+
+  .portrait-copy {
+    margin-top: 34px;
+    width: 100%;
+    white-space: normal;
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(15px, 0.98vw, 19px);
+    font-weight: 400;
+    line-height: 1.38;
+    letter-spacing: 0;
+    color: var(--text-dark);
+    opacity: 0;
+    animation: fade-up-plain 1s cubic-bezier(0.16,1,0.3,1) 2.6s forwards;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  @keyframes fade-up-plain {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes portrait-in {
+    from { opacity: 0; }
+    to   { opacity: 0.82; }
+  }
+
+  /* ── Floating question nodes ── */
+  .question {
+    position: fixed;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--text-mid);
+    text-align: center;
+    max-width: 230px;
+    cursor: default;
+    z-index: 5;
+    /* softer blur, more visible by default */
+    filter: blur(3px);
+    opacity: 0;
+    transition: filter 0.55s cubic-bezier(0.16,1,0.3,1),
+                opacity 0.55s cubic-bezier(0.16,1,0.3,1),
+                color 0.35s ease;
+    will-change: transform, filter;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+
+  .question:hover {
+    filter: blur(0px);
+    opacity: 1 !important;
+    color: var(--text-dark);
+  }
+
+  /* ── Roles strip ── */
+  #roles-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 20px;
+  }
+  .role-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dark);
+    opacity: 0.75;
+    white-space: nowrap;
+  }
+  .role-item::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #c9a96e;
+    flex-shrink: 0;
+  }
+
+  /* ── Location / availability ── */
+  #location-strip {
+    position: fixed;
+    top: 28px;
+    right: 36px;
+    text-align: right;
+    z-index: 4;
+    opacity: 0;
+    animation: fade-up-plain 0.8s ease 3.2s forwards;
+    white-space: nowrap;
+  }
+  #location-strip .loc-line {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Hex pattern canvas (behind everything) -->
+<canvas id="hex-canvas"></canvas>
+
+<!-- Line canvas -->
+<canvas id="line-canvas"></canvas>
+
+<!-- Portrait -->
+<div id="portrait-wrap">
+  <img id="portrait" src="Untitled design.png" alt="Shim Palladan" />
+  <div id="portrait-fade"></div>
+  <div id="portrait-name">
+    <span class="pname-first">SHIM</span>
+    <span class="pname-last">PALLADAN</span>
+    <p class="portrait-copy">I design &amp; build systems that make life safer, sharper, and more intentional —<br>from autonomous airspace to tools for human growth.</p>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-center">
+    <span class="nav-indicator" aria-hidden="true"></span>
+    <button type="button" class="active" aria-pressed="true">Home</button>
+    <button type="button" aria-pressed="false">About</button>
+    <button type="button" aria-pressed="false">Work</button>
+    <button type="button" aria-pressed="false">Explorations</button>
+    <button type="button" aria-pressed="false">Contact</button>
+  </div>
+</nav>
+
+<div id="location-strip">
+  <span class="loc-line">Bangalore · India</span>
+  <span class="loc-line">Available for what matters</span>
+</div>
+
+<div class="question" id="q0">Where does human<br>thinking go next?</div>
+<div class="question" id="q1">Can intelligence<br>create wisdom?</div>
+<div class="question" id="q2">What does progress mean<br>when speed is no longer<br>the advantage?</div>
+<div class="question" id="q3">What should humans become<br>in the age of AI?</div>
+<div class="question" id="q4">Can technology deepen<br>human agency?</div>
+<div class="question" id="q5">Can identity be<br>intentionally redesigned?</div>
+<div class="question" id="q6">Can we design a better<br>way to live?</div>
+<div class="question" id="q7">How do we design<br>the future of<br>human thinking?</div>
+
+
+<script>
+  // ─── Positions (% offset from center) ───
+  const positions = [
+    { x: -38, y: -22 },
+    { x: -38, y: -5  },
+    { x: -40, y:  13 },
+    { x: -37, y:  32 },
+    { x:  38, y: -22 },
+    { x:  42, y:  -5 },
+    { x:  40, y:  13 },
+    { x:  37, y:  32 },
+  ];
+
+  const questions  = Array.from(document.querySelectorAll('.question'));
+  const lineCanvas = document.getElementById('line-canvas');
+  const lCtx       = lineCanvas.getContext('2d');
+  const hexCanvas  = document.getElementById('hex-canvas');
+  const hCtx       = hexCanvas.getContext('2d');
+  const cursorEl   = document.getElementById('cursor');
+  const ringEl     = document.getElementById('cursor-ring');
+  const nameEl     = document.getElementById('portrait');
+  const navCenter   = document.querySelector('.nav-center');
+  const navItems    = Array.from(document.querySelectorAll('.nav-center button'));
+  const navIndicator = document.querySelector('.nav-indicator');
+
+  let W = window.innerWidth, H = window.innerHeight;
+  let cx = W / 2, cy = H / 2;
+  let mouseX = cx, mouseY = cy;
+  let ringX  = cx, ringY  = cy;
+  let hexOffX = 0, hexOffY = 0; // for parallax
+  let idleTimer = null, isIdle = false;
+
+  // ─── Resize ───
+  function moveNavIndicator(target, animate = true) {
+    if (!navCenter || !navIndicator || !target) return;
+    navIndicator.style.transitionDuration = animate ? '680ms' : '0ms';
+    navIndicator.style.width = `${target.offsetWidth}px`;
+    navIndicator.style.transform = `translateX(${target.offsetLeft}px)`;
+    if (!animate) {
+      requestAnimationFrame(() => {
+        navIndicator.style.transitionDuration = '';
+      });
+    }
+  }
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      navItems.forEach(navItem => {
+        navItem.classList.remove('active');
+        navItem.setAttribute('aria-pressed', 'false');
+      });
+      item.classList.add('active');
+      item.setAttribute('aria-pressed', 'true');
+      moveNavIndicator(item, true);
+    });
+  });
+
+  function resizeAll() {
+    W = window.innerWidth; H = window.innerHeight;
+    cx = W / 2; cy = H / 2;
+    lineCanvas.width = W; lineCanvas.height = H;
+    hexCanvas.width  = W; hexCanvas.height  = H;
+    drawHex(0, 0);
+    updateBasePositions();
+    moveNavIndicator(document.querySelector('.nav-center button.active'), false);
+  }
+  window.addEventListener('resize', resizeAll);
+
+  // ─── Fine square grid (accepts parallax offset) ───
+  function drawHex(ox, oy) {
+    hCtx.clearRect(0, 0, W, H);
+    const step = 52; // grid cell size
+    hCtx.strokeStyle = '#2a2825';
+    hCtx.lineWidth   = 0.5;
+    hCtx.globalAlpha = 0.055;
+    // vertical lines
+    const startX = ((ox % step) + step) % step - step;
+    for (let x = startX; x < W + step; x += step) {
+      hCtx.beginPath();
+      hCtx.moveTo(x, 0);
+      hCtx.lineTo(x, H);
+      hCtx.stroke();
+    }
+    // horizontal lines
+    const startY = ((oy % step) + step) % step - step;
+    for (let y = startY; y < H + step; y += step) {
+      hCtx.beginPath();
+      hCtx.moveTo(0, y);
+      hCtx.lineTo(W, y);
+      hCtx.stroke();
+    }
+    hCtx.globalAlpha = 1;
+  }
+
+  // ─── Base positions ───
+  const basePositions = [];
+  function updateBasePositions() {
+    questions.forEach((_, i) => {
+      const p = positions[i];
+      basePositions[i] = {
+        x: cx + (p.x / 100) * W,
+        y: cy + (p.y / 100) * H
+      };
+    });
+  }
+
+  function placeQuestions() {
+    questions.forEach((el, i) => {
+      const p = positions[i];
+      el.style.left = (cx + (p.x / 100) * W) + 'px';
+      el.style.top  = (cy + (p.y / 100) * H) + 'px';
+    });
+  }
+
+  // ─── Staggered entrance ───
+  // lines fade in starting at 1500ms
+  let linesAlpha = 0;
+  let linesStartTime = null;
+  const LINES_FADE_DURATION = 800;
+  setTimeout(() => { linesStartTime = performance.now(); }, 1500);
+
+  questions.forEach((el, i) => {
+    el.style.opacity   = '0';
+    el.style.transform = 'translate(-50%, -50%) scale(0.88)';
+    setTimeout(() => {
+      el.style.transition = 'opacity 1s cubic-bezier(0.16,1,0.3,1), transform 1s cubic-bezier(0.16,1,0.3,1), filter 0.55s ease, color 0.35s ease';
+      el.style.opacity   = '0.78';
+      el.style.filter    = 'blur(3px)';
+      el.style.transform = 'translate(-50%, -50%) scale(1)';
+    }, 1900 + i * 150);
+  });
+
+  // ─── Float params ───
+  const floatPhases = questions.map(() => Math.random() * Math.PI * 2);
+  const floatSpeeds = questions.map(() => 0.00042 + Math.random() * 0.00025);
+  const floatAmpX   = questions.map(() => 18 + Math.random() * 20);
+  const floatAmpY   = questions.map(() => 14 + Math.random() * 16);
+
+  // ─── Hover ───
+  questions.forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      el.style.filter    = 'blur(0px)';
+      el.style.opacity   = '1';
+      el.style.color     = '#2a2825';
+      ringEl.style.width = ringEl.style.height = '60px';
+    });
+    el.addEventListener('mouseleave', () => {
+      if (!isIdle) {
+        el.style.filter  = 'blur(3px)';
+        el.style.opacity = '0.78';
+      }
+      el.style.color     = '';
+      ringEl.style.width = ringEl.style.height = '36px';
+    });
+  });
+
+  // ─── Correct edge-point: clamp origin to box edge ───
+  function edgePoint(rect, fromX, fromY) {
+    const PAD = 12;
+    const l = rect.left   - PAD, r = rect.right  + PAD;
+    const t = rect.top    - PAD, b = rect.bottom + PAD;
+    // box center
+    const bx = (l + r) / 2, by = (t + b) / 2;
+    const dx = fromX - bx,  dy = fromY - by;
+    if (dx === 0 && dy === 0) return { x: bx, y: by };
+    // parametric intersect: find smallest positive t that hits a wall
+    let tMin = Infinity;
+    const tryT = (t) => { if (t > 1e-6 && t < tMin) tMin = t; };
+    if (dx !== 0) { tryT((l - bx) / dx); tryT((r - bx) / dx); }
+    if (dy !== 0) { tryT((t - by) / dy); tryT((b - by) / dy); }
+    return { x: bx + dx * tMin, y: by + dy * tMin };
+  }
+
+  // ─── Proximity unblur (for questions + name) ───
+  const PROX_RADIUS = 220;
+  function proximityBlur(ts) {
+    questions.forEach((el, i) => {
+      if (el.matches(':hover')) return; // hover handler owns it
+      const rect = el.getBoundingClientRect();
+      const ex = rect.left + rect.width  / 2;
+      const ey = rect.top  + rect.height / 2;
+      const dist = Math.hypot(mouseX - ex, mouseY - ey);
+      const t = Math.max(0, 1 - dist / PROX_RADIUS);
+      if (!isIdle) {
+        const blur = 3 * (1 - t);
+        const op   = 0.78 + 0.22 * t;
+        el.style.filter  = `blur(${blur.toFixed(2)}px)`;
+        el.style.opacity = op.toFixed(3);
+      }
+    });
+
+    // Portrait proximity — blur uncovers as cursor nears
+    if (nameEl) {
+      const nr = nameEl.getBoundingClientRect();
+      const nx = nr.left + nr.width  / 2;
+      const ny = nr.top  + nr.height / 2;
+      const nd = Math.hypot(mouseX - nx, mouseY - ny);
+      const nt = Math.max(0, 1 - nd / (PROX_RADIUS * 2.2));
+      const blurVal = 6 * (1 - nt);
+      const opVal   = 0.82 + 0.18 * nt;
+      nameEl.style.filter  = `blur(${blurVal.toFixed(2)}px) grayscale(${Math.round(18*(1-nt))}%)`;
+      nameEl.style.opacity = opVal.toFixed(3);
+    }
+  }
+
+  // ─── Idle reveal / re-blur ───
+  function resetIdle() {
+    if (isIdle) {
+      isIdle = false;
+      questions.forEach(el => {
+        if (!el.matches(':hover')) {
+          el.style.filter  = 'blur(3px)';
+          el.style.opacity = '0.78';
+        }
+      });
+    }
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      isIdle = true;
+      questions.forEach(el => {
+        el.style.transition = 'opacity 1.6s ease, filter 1.6s ease, color 0.35s ease';
+        el.style.filter     = 'blur(0px)';
+        el.style.opacity    = '1';
+      });
+    }, 4000);
+  }
+
+  // ─── Init ───
+  resizeAll();
+  placeQuestions();
+  resetIdle();
+
+  // ─── Animation loop ───
+  const nodePos = questions.map((_, i) => ({
+    x: basePositions[i]?.x ?? cx,
+    y: basePositions[i]?.y ?? cy
+  }));
+  let hexOX = 0, hexOY = 0;
+
+  function animate(ts) {
+    // Float questions
+    questions.forEach((el, i) => {
+      if (!basePositions[i]) return;
+      const fx = basePositions[i].x + Math.sin(ts * floatSpeeds[i] + floatPhases[i]) * floatAmpX[i];
+      const fy = basePositions[i].y + Math.cos(ts * floatSpeeds[i] * 0.7 + floatPhases[i]) * floatAmpY[i];
+      el.style.left = fx + 'px';
+      el.style.top  = fy + 'px';
+      nodePos[i] = { x: fx, y: fy };
+    });
+
+    // Proximity unblur
+    proximityBlur(ts);
+
+    // Smooth cursor ring
+    ringX += (mouseX - ringX) * 0.12;
+    ringY += (mouseY - ringY) * 0.12;
+    ringEl.style.left = ringX + 'px';
+    ringEl.style.top  = ringY + 'px';
+
+    // Hex parallax — smooth lerp toward target
+    const targetHexOX = (mouseX - cx) * 0.025;
+    const targetHexOY = (mouseY - cy) * 0.025;
+    hexOX += (targetHexOX - hexOX) * 0.04;
+    hexOY += (targetHexOY - hexOY) * 0.04;
+    drawHex(hexOX, hexOY);
+
+    // Radiating lines — fade in after portrait, terminate at edge of each text box
+    if (linesStartTime !== null) {
+      linesAlpha = Math.min(1, (performance.now() - linesStartTime) / LINES_FADE_DURATION);
+    }
+    lCtx.clearRect(0, 0, W, H);
+    lCtx.lineWidth = 0.65;
+    questions.forEach((el, i) => {
+      const rect = el.getBoundingClientRect();
+      const ep   = edgePoint(rect, cx, cy);
+      const hovered = el.matches(':hover');
+      const idle_lit = isIdle;
+      const baseAlpha = hovered || idle_lit ? 0.55 : 0.20;
+      const alpha = baseAlpha * linesAlpha;
+      const grad  = lCtx.createLinearGradient(cx, cy, ep.x, ep.y);
+      grad.addColorStop(0,    'rgba(42,40,37,0.0)');
+      grad.addColorStop(0.25, `rgba(42,40,37,${0.10 * linesAlpha})`);
+      grad.addColorStop(1,    `rgba(42,40,37,${alpha})`);
+      lCtx.beginPath();
+      lCtx.moveTo(cx, cy);
+      lCtx.lineTo(ep.x, ep.y);
+      lCtx.strokeStyle = grad;
+      lCtx.stroke();
+    });
+
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+
+  // ─── Cursor + idle reset on move ───
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    cursorEl.style.left = mouseX + 'px';
+    cursorEl.style.top  = mouseY + 'px';
+    resetIdle();
+  });
+</script>
+</body>
+</html>
