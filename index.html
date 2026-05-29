@@ -224,8 +224,6 @@
                 opacity 1.2s cubic-bezier(0.16,1,0.3,1);
     will-change: filter;
     mix-blend-mode: normal;
-    -webkit-mask-image: radial-gradient(ellipse 75% 85% at 50% 40%, black 45%, transparent 100%);
-    mask-image: radial-gradient(ellipse 75% 85% at 50% 40%, black 45%, transparent 100%);
   }
 
   /* gradient fade at bottom */
@@ -240,6 +238,36 @@
       rgba(15,14,13,0.88) 70%,
       var(--bg) 100%
     );
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* left edge fade */
+  #portrait-fade-left {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 30%;
+    background: linear-gradient(to right, var(--bg) 0%, transparent 100%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* right edge fade */
+  #portrait-fade-right {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 30%;
+    background: linear-gradient(to left, var(--bg) 0%, transparent 100%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* top edge fade */
+  #portrait-fade-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 20%;
+    background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
     z-index: 2;
     pointer-events: none;
   }
@@ -454,6 +482,9 @@
 <div id="portrait-wrap">
   <img id="portrait" src="Untitled design.png" alt="Shim Palladan" />
   <div id="portrait-fade"></div>
+  <div id="portrait-fade-left"></div>
+  <div id="portrait-fade-right"></div>
+  <div id="portrait-fade-top"></div>
   <div id="portrait-name">
     <span class="pname-first">SHIM</span>
     <span class="pname-last">PALLADAN</span>
